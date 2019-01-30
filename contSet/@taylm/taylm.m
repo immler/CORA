@@ -347,7 +347,11 @@ methods
     res = atan( obj )       % overloaded 'asin()'
     res = getSyms( obj )    % returns a polynomial in a sym form
     res = trace(obj)        % trace for TM matrices
-    
+    res = integrate(obj, var, bnd) % indefinite integral from 0
+    res = center(obj) % center
+    res = subset(obj1, obj2)
+    res = remainders(obj)
+    res = set_remainders(obj, remainders)
     %display functions
     display(obj)
 end
