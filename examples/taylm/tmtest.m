@@ -1,8 +1,4 @@
 function tmtest()
-
-    beta=8.0/3.0;
-    rho=28;
-    sigma=10;
     %res = picard(lorenz, tm);
 
 %    lorenz = [t, (sigma * (y - x)), (x * (rho - z) - y), (x * y - beta * z)];
@@ -13,9 +9,74 @@ function tmtest()
     tm = taylm(interval(-1, 1), 4, {'x'});
     res_flow = picardIter(tm, flow, 't', 0.1, 30, 1.5, 1.01)
     
-    lorenz = @(x) [sigma * (x(2)-x(1)), x(1) * (rho - x(3)) - x(2), x(1)*x(2) - beta * x(3)];
-    tm = taylm(interval([0 0 28], [0.1 0.2 28]), 3, {'x' 'y' 'z'});
-    res_lorenz = picardIter(tm, lorenz, 't', 0.009, 30, 1.1, 1.01)
+    
+    beta=8.0/3.0;
+    rho=28;
+    sigma=10;
+    lorenzt = @(x) [sigma * (x(2)-x(1)); x(1) * (rho - x(3)) - x(2); x(1)*x(2) - beta * x(3)];
+    tm = taylm(interval([-0.1; -0.1; 28], [0.1; 0.1; 28]), 3, {'x'; 'y'; 'z'})
+    zono = zono_of_taylm(tm)
+    res_lorenz = picardIter(tm, lorenzt, 't', 0.009, 30, 1.1, 1.01)
+    
+    
+    
+    
+    %set options --------------------------------------------------------------
+    options.tStart=0; %start time
+    options.tFinal=0.1; %final time
+    options.x0=[0; 0; 28]; %initial state for simulation
+    options.R0=zonotope([options.x0,[0.1 0 0; 0 0.2 0; 0 0 0]]); %initial state for reachability analysis
+
+    options.timeStep=0.1; %time step size for reachable set computation
+    options.plotType='frame';
+    options.projectedDimensions=[1 3];
+    options.tensorOrder = 1;
+
+    options.timeStep=0.02; %time step size for reachable set computation
+
+    %--------------------------------------------------------------------------
+
+
+    %obtain uncertain inputs
+    options.uTrans = 0;
+    options.U = zonotope([0,0]); %input for reachability analysis
+
+    %specify continuous dynamics-----------------------------------------------
+    lorenz_sys = nonlinearSys(3,1,@lorenz, options); %initialize tank system
+    %--------------------------------------------------------------------------
+
+    %create random simulations; RRTs would provide better results, but are
+    %computationally more demanding
+    runs = 60;
+    fractionVertices = 0.5;
+    fractionInputVertices = 0.5;
+    inputChanges = 6;
+    simRes = simulate_random(lorenz_sys, options, runs, fractionVertices, fractionInputVertices, inputChanges);
+
+    
+    %plot results--------------------------------------------------------------
+    projectedDimensions=[1 3];
+    plotOrder = 20;
+    figure;
+    hold on
+    %plot initial set
+    plotFilled(options.R0,projectedDimensions,'w','EdgeColor','k');
+    
+    %plot simulation results      
+    for i=1:length(simRes.t)
+        plot(simRes.x{i}(:,projectedDimensions(1)),simRes.x{i}(:,projectedDimensions(2)),'Color',0*[1 1 1]);
+    end
+
+end
+
+function res = zono_of_taylm1( obj )
+    objz = obj;
+    objz.max_order = 1;
+    res = objz;
+end
+
+function res = zono_of_taylm( obj )
+    res = arrayfun(@zono_of_taylm1, obj)
 end
 
 % HORNER INSERT (tm for t) TM:
