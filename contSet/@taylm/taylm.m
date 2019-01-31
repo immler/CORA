@@ -348,6 +348,7 @@ methods
     res = getSyms( obj )    % returns a polynomial in a sym form
     res = trace(obj)        % trace for TM matrices
     res = integrate(obj, var, bnd) % indefinite integral from 0
+    [ms cs t] = integrate_poly(obj, var) % integral polynomial
     res = center(obj) % center
     res = subset(obj1, obj2)
     res = remainders(obj)
