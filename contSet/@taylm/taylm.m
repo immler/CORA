@@ -352,6 +352,10 @@ methods
     res = subset(obj1, obj2)
     res = remainders(obj)
     res = set_remainders(obj, remainders)
+    res = index_of(obj, name)
+    res = zono_of_taylm(obj, names)
+    [quot rem] = divmod(obj1, obj2)
+    res = horner(obj, vs, args)
     %display functions
     display(obj)
 end

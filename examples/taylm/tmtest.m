@@ -1,5 +1,9 @@
 function tmtest()
     %res = picard(lorenz, tm);
+    tm = taylm(sym(@(x, y) 42 + x^2 + 3 * x * y + 4 * y + x*y^3), interval([-1 -1], [1 1]));
+    tm.remainder = interval(1, 2)
+    res = horner(tm, 'x', taylm(sym(@(y) y), interval(-1, 1)));
+    res = horner(tm, ['y', 'x'], [taylm(sym(@(t) t), interval(-1, 1)), taylm(sym(@(s) s), interval(-1, 1))]);
 
 %    lorenz = [t, (sigma * (y - x)), (x * (rho - z) - y), (x * y - beta * z)];
 %    picard([t0 x0 y0 z0], [t0 x0 y0 z0], lorenz, [t x y z], t, 2);
@@ -7,25 +11,22 @@ function tmtest()
     
     flow = @(x) [1 + x(1)^2];
     tm = taylm(interval(-1, 1), 4, {'x'});
-    res_flow = picardIter(tm, flow, 't', 0.1, 30, 1.5, 1.01)
+    res_flow = picardIter(tm, flow, 't', 0.02, 30, 1.01, 1.1);
     
     
     beta=8.0/3.0;
     rho=28;
     sigma=10;
     lorenzt = @(x) [sigma * (x(2)-x(1)); x(1) * (rho - x(3)) - x(2); x(1)*x(2) - beta * x(3)];
-    tm = taylm(interval([-0.1; -0.1; 28], [0.1; 0.1; 28]), 3, {'x'; 'y'; 'z'})
-    zono = zono_of_taylm(tm)
-    res_lorenz = picardIter(tm, lorenzt, 't', 0.009, 30, 1.1, 1.01)
-    
-    
-    
-    
+    tm = taylm(interval([-0.01; -0.01; 28], [0.01; 0.01; 28]),4, {'x'; 'y'; 'z'}, 'int');
+    res_lorenz = picardIter(tm, lorenzt, 't', 0.001, 30, 1.1, 1.1)
+    zono = zono_of_taylm(res_lorenz, [{'t'}, {'x'}, {'y'}, {'z'}]);
+    return
     %set options --------------------------------------------------------------
     options.tStart=0; %start time
-    options.tFinal=0.1; %final time
+    options.tFinal=0.02; %final time
     options.x0=[0; 0; 28]; %initial state for simulation
-    options.R0=zonotope([options.x0,[0.1 0 0; 0 0.2 0; 0 0 0]]); %initial state for reachability analysis
+    options.R0=zonotope([options.x0,[0.1 0 0; 0 0.1 0; 0 0 0]]); %initial state for reachability analysis
 
     options.timeStep=0.1; %time step size for reachable set computation
     options.plotType='frame';
@@ -62,6 +63,9 @@ function tmtest()
     %plot initial set
     plotFilled(options.R0,projectedDimensions,'w','EdgeColor','k');
     
+    %plot reachable set
+    plotFilled(zono,projectedDimensions,[.8 .8 .8],'EdgeColor','none');
+    
     %plot simulation results      
     for i=1:length(simRes.t)
         plot(simRes.x{i}(:,projectedDimensions(1)),simRes.x{i}(:,projectedDimensions(2)),'Color',0*[1 1 1]);
@@ -69,22 +73,10 @@ function tmtest()
 
 end
 
-function res = zono_of_taylm1( obj )
-    objz = obj;
-    objz.max_order = 1;
-    res = objz;
-end
-
-function res = zono_of_taylm( obj )
-    res = arrayfun(@zono_of_taylm1, obj)
-end
-
-% HORNER INSERT (tm for t) TM:
-% split constant (w.r.t., t) part and higher part
-% horner = new taylm(const)+tm*(higher/t)
-
 function res = picard(init, f, t, h, x)
     % res = arrayfun(@(i, f) collectAndReduce(i + int(subs(f, x, iterate), t, 0, t), [t, init], maxOrder), init, f);
+    x = x;
+    fx = f(x);
     res = arrayfun(@(i, f) i + integrate(f, t, h), init, f(x));
 end
 
