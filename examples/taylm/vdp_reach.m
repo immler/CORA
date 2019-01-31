@@ -1,15 +1,16 @@
-function lorenz_reach()
+function vdp_reach()
     % optns for Picard iteration
-    optns.picard_iterations = 30;
-    optns.widening_scale = 5;
+    optns.picard_iterations = 40;
+    optns.widening_scale = 1.5;
     optns.narrowing_scale = 1.1;
     optns.time_var = 't';
     
     % iniitalization of simulation and tdreach
-    options.tFinal=0.03;
-    tm0 = taylm(interval([-0.1; -0.1; 28], [0.1; 0.1; 28]),4, {'x'; 'y'; 'z'}, 'int');
-    zono0 = zono_of_taylm(tm0, ['x', 'y', 'z']);
-    options.projectedDimensions=[1 3];
+    options.tFinal=1.0;
+    
+    tm0 = taylm(interval([1.1; 2.25], [1.7; 2.35]),6, {'x'; 'y'}, 'int');
+    zono0 = zono_of_taylm(tm0, ['x', 'y']);
+    options.projectedDimensions=[1 2];
 
     % fixed options for simulation
     options.tStart=0;
@@ -20,17 +21,15 @@ function lorenz_reach()
     options.R0=zono0;
     
     
-    beta=8.0/3.0;
-    rho=28;
-    sigma=10;
-    lorenzt = @(x) [sigma * (x(2)-x(1)); x(1) * (rho - x(3)) - x(2); x(1)*x(2) - beta * x(3)];
+    mu=1;
+    vdpt = @(x) [x(2); mu*(1-x(1)^2)*x(2)-x(1)];
     
     % compute reachable set
-    [reach, rs] = timeSeries(tm0, lorenzt, 0.01, options.tFinal, optns);
+    [reach, rs] = timeSeries(tm0, vdpt, 0.02, options.tFinal, optns);
 
 
     % simulation
-    lorenz_sys = nonlinearSys(3,1,@lorenz, options); %initialize tank system
+    lorenz_sys = nonlinearSys(2,1,@vanderPolEq, options);
     %--------------------------------------------------------------------------
     runs = 60;
     fractionVertices = 0.5;
@@ -42,19 +41,20 @@ function lorenz_reach()
     plotOrder = 20;
     figure;
     hold on
-    %plot initial set
-    plotFilled(options.R0,options.projectedDimensions,'w','EdgeColor','k');
     
     for i=1:rs
         %plot flowpipes
-        zono = zono_of_taylm(reach{i}{2}, ['t', 'x', 'y', 'z']);
-        plotFilled(zono,options.projectedDimensions,[.5 .5 .5],'EdgeColor','none');
+        zono = zono_of_taylm(reach{i}{2}, ['t', 'x', 'y']);
+        plotFilled(zono,options.projectedDimensions,[.5 .5 .5],'EdgeColor','black');
     end
     
+    %plot initial set
+    plotFilled(options.R0,options.projectedDimensions,'w','EdgeColor','black');
+
     %plot discrete sets
     for i=1:rs
-        zono = zono_of_taylm(reach{i}{1}, ['t', 'x', 'y', 'z']);
-        plotFilled(zono,options.projectedDimensions,[.8 .8 .8],'EdgeColor','none');
+        zono = zono_of_taylm(reach{i}{1}, ['t', 'x', 'y']);
+        plotFilled(zono,options.projectedDimensions,[.8 .8 .8],'EdgeColor','black');
     end
     
     %plot simulation results      

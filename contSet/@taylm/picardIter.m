@@ -16,6 +16,8 @@ function res = picardIter(init, f, h, optns)
     end
     widening_iterations = n
     if n == N
+        old = old
+        iterate = iterate
         error("Picard iteration not converging: you can try to set a higher widening_scale or lower step size!")
     end
     iterate = old; % this is a certified enclosure (the variant of the previous loop)
