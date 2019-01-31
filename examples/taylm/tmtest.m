@@ -24,7 +24,7 @@ function tmtest()
     lorenzt = @(x) [sigma * (x(2)-x(1)); x(1) * (rho - x(3)) - x(2); x(1)*x(2) - beta * x(3)];
     tm = taylm(interval([-0.1; -0.1; 28], [0.1; 0.1; 28]),4, {'x'; 'y'; 'z'}, 'int');
 %    res_lorenz = picardIter(tm, lorenzt, 0.01, optns)
-    [reach, rs] = timeSeries(tm, lorenzt, 0.01, 0.15, optns)
+    [reach, rs] = timeSeries(tm, lorenzt, 0.01, 0.01, optns)
 
     %set options --------------------------------------------------------------
     options.tStart=0; %start time
@@ -84,69 +84,4 @@ function tmtest()
         plot(simRes.x{i}(:,projectedDimensions(1)),simRes.x{i}(:,projectedDimensions(2)),'Color',0*[1 1 1]);
     end
 
-end
-
-function [reach, rs] = timeSeries(x, f, h, T, optns)
-    N = T / h + 1;
-    reach = cell(N, 2);
-    t = 0.0
-    i = 1
-    while t < T
-        dh = min(h, T - t);
-        [flowpipe, x] = timeStep(x, f, dh, optns);
-        reach{i}{1} = x;
-        reach{i}{2} = flowpipe;
-        t = t + dh
-        i = i + 1;
-    end
-    rs = i - 1
-end
-
-function [flowpipe, final] = timeStep(x, f, h, optns)
-    flowpipe = picardIter(x, f, h, optns);
-    timestep = taylm(interval(h, h));
-    final = horner(flowpipe, 't', timestep);
-end
-
-function res = picard(init, f, t, h, x)
-    % res = arrayfun(@(i, f) collectAndReduce(i + int(subs(f, x, iterate), t, 0, t), [t, init], maxOrder), init, f);
-    x = x;
-    fx = f(x);
-    res = arrayfun(@(i, f) i + integrate(f, t, h), init, f(x));
-end
-
-function res = picardIter(init, f, h, optns)
-    t = optns.time_var;
-    N = optns.picard_iterations;
-    widening_scale = optns.widening_scale;
-    narrowing_scale = optns.narrowing_scale;
-    iterate = init;
-    do = true;
-    n = 0;
-    % widening
-    while do
-        n = n + 1;
-        old = iterate;
-        old = set_remainders(old, widening_scale * remainders(old));
-        iterate = picard(init, f, t, h, old);
-        do = (not (subset(iterate, old)) & n < N);
-    end
-    widening_iterations = n
-    if n == N
-        error("Picard iteration not converging: you can try to set a higher widening_scale or lower step size!")
-    end
-    iterate = old; % this is a certified enclosure (the variant of the previous loop)
-    % narrowing
-    n = 0;
-    do = true;
-    while do
-        n = n + 1;
-        old = iterate;
-        iterate = picard(init, f, t, h, old);
-        % iterate2 ensures progress by at least a factor of narrowing_scale
-        iterate_wide = set_remainders(iterate, narrowing_scale * remainders(iterate));
-        do = (subset(iterate_wide, old) & n <= N);
-    end
-    narrowing_iterations = n
-    res = old; % this is a certified enclosure (an invariant of the previous loop)
 end

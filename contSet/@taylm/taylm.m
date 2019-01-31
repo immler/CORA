@@ -357,6 +357,8 @@ methods
     res = zono_of_taylm(obj, names)
     [quot rem] = divmod(obj1, obj2)
     res = horner(obj, vs, args)
+    res = picardIter(init, f, h, optns)
+    [reach, rs] = timeSeries(x, f, h, T, optns)
     %display functions
     display(obj)
 end
