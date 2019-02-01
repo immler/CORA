@@ -1,14 +1,17 @@
 function vdp_reach()
     % optns for Picard iteration
-    optns.picard_iterations = 40;
-    optns.widening_scale = 1.5;
-    optns.narrowing_scale = 1.1;
-    optns.time_var = 't';
+    optns.picard_threshold = 1e-10;
+    optns.picard_order = 4;
+    optns.widening_scale = 1.1;
+    optns.narrowing_scale = 1.01;
+    optns.time_var = {'t'};
+    optns.remainder_estimation = [0.0001; 0.0001];
     
     % iniitalization of simulation and tdreach
-    options.tFinal=0.02;
+    options.timeStep=0.1;
+    options.tFinal=0.2;
     
-    tm0 = taylm(interval([1.1; 2.25], [1.7; 2.35]),6, {'x'; 'y'}, 'int');
+    tm0 = taylm(interval([1.1; 2.25], [1.7; 2.35]),4, {'x'; 'y'}, 'int');
     zono0 = zono_of_taylm(tm0, ['x', 'y']);
     options.projectedDimensions=[1 2];
 
@@ -20,12 +23,11 @@ function vdp_reach()
     options.x0=center(zono0);
     options.R0=zono0;
     
-    
     mu=1;
     vdpt = @(x) [x(2); mu*(1-x(1)^2)*x(2)-x(1)];
     
     % compute reachable set
-    [reach, rs] = timeSeries(tm0, vdpt, 0.02, options.tFinal, optns);
+    [reach, rs] = timeSeries(tm0, vdpt, options.timeStep, options.tFinal, optns);
 
 
     % simulation

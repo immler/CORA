@@ -2,19 +2,18 @@ function chen_reach() % actually, now it is the example by
 %   Neher et al: "On Taylor Model Based integration of ODEs"
     
     % optns for Picard iteration
-    optns.picard_threshold = 1e-10; % when are we happy with a picard approximation
+    optns.picard_threshold = 1e-10;
     optns.picard_order = 6;
     optns.widening_scale = 1.1;
     optns.narrowing_scale = 1.01;
     optns.time_var = {'t'};
     optns.remainder_estimation = [0.0001; 0.0001];
     
-    % iniitalization of simulation and tdreach
-    options.tFinal=0.4;
+    % initalization of simulation and tdreach
+    options.tFinal=5;
 
     tm0 = taylm(interval([0.95; -1.05], [1.05; -0.95]),6, {'a'; 'b'}, 'int');
-    zono0 = zonotope([[1; -1], [0.05; 0] [0; 0.05]]);
-%    zono0 = zono_of_taylm(tm0, ['a', 'b']);
+    zono0 = zono_of_taylm(tm0, ['a', 'b']);
     options.projectedDimensions=[1 2];
 
     % fixed options for simulation
