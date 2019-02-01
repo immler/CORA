@@ -4,18 +4,17 @@ function [reach, rs] = timeSeries(x, f, h, T, optns)
     t = 0.0;
     i = 1;
     while t < T
-        dh = min(h, T - t);
-        [flowpipe, x] = timeStep(x, f, dh, optns);
+        [flowpipe, x] = timeStep(x, f, h, optns);
         reach{i}{1} = x;
         reach{i}{2} = flowpipe;
-        t = t + dh
+        t = t + h
         i = i + 1;
     end
     rs = i - 1;
 end
 
 function [flowpipe, final] = timeStep(x, f, h, optns)
-    flowpipe = picardIter(x, f, h, optns);
-    timestep = taylm(interval(h, h));
-    final = horner(flowpipe, 't', timestep);
+    flowpipe = certify_step(f, x, h, optns);
+    timestep = taylm(interval(1, 1), x(1).max_order);
+    final = horner(flowpipe, {'t'}, timestep);
 end

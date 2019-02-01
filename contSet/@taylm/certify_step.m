@@ -17,6 +17,7 @@ function res = certify_step(f, init, h, optns)
         picard2 = init + integrate_timesubst(f(cand), optns.time_var, h);
         
         % subtract plain (!) polynomial, without remainder!
+        % really?
         polydiff = picard2 - picard;
         diffi = interval(polydiff);
         if diffi <= rem

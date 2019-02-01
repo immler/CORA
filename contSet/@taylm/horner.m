@@ -6,9 +6,7 @@ end
 function res = horners ( obj, vs, args )
     [~, sv] = size(vs);
     if sv == 0
-        res = obj;
-        [res, resr] = compress(res);
-        res.remainder = res.remainder + resr;
+        res = compresso(obj);
     else
         w = vs(1, 1);
         ws = vs(1, 2:end);
@@ -20,9 +18,16 @@ function res = horners ( obj, vs, args )
             [q, r] = divmod(obj, i);
             r = horners(r, ws, brgs);
             q = horners(q, vs, args);
-            res = (r + args(1, 1) * q);
+            a = args(1,1);
+            p = a * q;
+            res = (r + p);
         end
     end
+end
+
+function res = compresso(obj)
+    [res, resr] = compress(obj);
+    res.remainder = res.remainder + resr;
 end
 
 %insert the taylor model arg into the variable v of the scalar taylm obj

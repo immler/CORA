@@ -2,18 +2,19 @@ function chen_reach() % actually, now it is the example by
 %   Neher et al: "On Taylor Model Based integration of ODEs"
     
     % optns for Picard iteration
-    optns.picard_threshold = 1e-5; % when are we happy with a picard approximation
-    optns.picard_order = 3;
+    optns.picard_threshold = 1e-10; % when are we happy with a picard approximation
+    optns.picard_order = 6;
     optns.widening_scale = 1.1;
-    optns.narrowing_scale = 1.1;
+    optns.narrowing_scale = 1.01;
     optns.time_var = {'t'};
-    optns.remainder_estimation = [0.001; 0.001];
+    optns.remainder_estimation = [0.0001; 0.0001];
     
     % iniitalization of simulation and tdreach
-    options.tFinal=0.02;
+    options.tFinal=0.4;
 
-    tm0 = taylm(interval([0.95; -1.05], [1.05; -0.95]),3, {'a'; 'b'}, 'int');
-    zono0 = zono_of_taylm(tm0, ['a', 'b']);
+    tm0 = taylm(interval([0.95; -1.05], [1.05; -0.95]),6, {'a'; 'b'}, 'int');
+    zono0 = zonotope([[1; -1], [0.05; 0] [0; 0.05]]);
+%    zono0 = zono_of_taylm(tm0, ['a', 'b']);
     options.projectedDimensions=[1 2];
 
     % fixed options for simulation
@@ -23,15 +24,23 @@ function chen_reach() % actually, now it is the example by
     options.U = zonotope([0,0]);
     options.x0=center(zono0);
     options.R0=zono0;
-    
+    options.timeStep=0.1;
     
     % function
     chen = @(x) [x(2); (x(1)^2)];
     
     % compute reachable set
-    certify_step(chen, tm0, 0.1, optns)
+    [reach, rs] = timeSeries(tm0, chen, options.timeStep, options.tFinal, optns);
     
-    return
+    % simulation
+    lorenz_sys = nonlinearSys(2,1,@chenEq, options);
+    %--------------------------------------------------------------------------
+    runs = 60;
+    fractionVertices = 0.5;
+    fractionInputVertices = 0.5;
+    inputChanges = 1;
+    simRes = simulate_random(lorenz_sys, options, runs, fractionVertices, fractionInputVertices, inputChanges);
+
     %plot results--------------------------------------------------------------
     plotOrder = 20;
     figure;
@@ -52,4 +61,14 @@ function chen_reach() % actually, now it is the example by
         plotFilled(zono,options.projectedDimensions,[.8 .8 .8],'EdgeColor','black');
     end
     
+    %plot simulation results      
+    for i=1:length(simRes.t)
+        plot(simRes.x{i}(:,options.projectedDimensions(1)),simRes.x{i}(:,options.projectedDimensions(2)),'Color',1*[1 0 1]);
+    end
+    
+end
+
+function [dx]=chenEq(~,x,~)
+dx(1,1)=x(2);
+dx(2,1)=x(1)^2;
 end
