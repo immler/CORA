@@ -1,5 +1,5 @@
 function res = index_of (obj, n)
-    res = find(cellfun(@(x)isequal(x,n),obj.names_of_var));
+    res = find(ismember(obj.names_of_var, n));
     if isempty(res)
         res = 0;
     else

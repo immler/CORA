@@ -7,6 +7,8 @@ function res = horners ( obj, vs, args )
     [~, sv] = size(vs);
     if sv == 0
         res = obj;
+        [res, resr] = compress(res);
+        res.remainder = res.remainder + resr;
     else
         w = vs(1, 1);
         ws = vs(1, 2:end);
@@ -18,7 +20,7 @@ function res = horners ( obj, vs, args )
             [q, r] = divmod(obj, i);
             r = horners(r, ws, brgs);
             q = horners(q, vs, args);
-            res = r + args(1, 1) * q;
+            res = (r + args(1, 1) * q);
         end
     end
 end

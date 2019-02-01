@@ -6,7 +6,7 @@ function vdp_reach()
     optns.time_var = 't';
     
     % iniitalization of simulation and tdreach
-    options.tFinal=1.0;
+    options.tFinal=0.02;
     
     tm0 = taylm(interval([1.1; 2.25], [1.7; 2.35]),6, {'x'; 'y'}, 'int');
     zono0 = zono_of_taylm(tm0, ['x', 'y']);

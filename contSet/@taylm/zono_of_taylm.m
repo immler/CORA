@@ -1,5 +1,5 @@
 function res = zono_of_taylm( obj, names )
-    obj = order_1_taylm(obj)
+    obj = order_1_taylm(obj);
     [so, ~] = size(obj);
     [~, sn] = size(names);
     zono = zeros(so, sn + 1 + so(1));

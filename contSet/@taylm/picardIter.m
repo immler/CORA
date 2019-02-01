@@ -6,6 +6,17 @@ function res = picardIter(init, f, h, optns)
     iterate = init;
     do = true;
     n = 0;
+    % first compute expression for flow map
+    for i=1:(init(1).max_order + 1)
+        old = iterate;
+        iterate = picardPoly(init, f, t, old);
+        iterate = set_remainders(iterate, 0 * remainders(old));
+    end
+    % now check if an interval works
+    iterate = iterate
+    
+    
+    return
     % widening
     while do
         n = n + 1;
@@ -40,5 +51,5 @@ function res = picard(init, f, t, h, x)
     % res = arrayfun(@(i, f) collectAndReduce(i + int(subs(f, x, iterate), t, 0, t), [t, init], maxOrder), init, f);
     x = x;
     fx = f(x);
-    res = arrayfun(@(i, f) i + integrate(f, t, h), init, f(x));
+    res = arrayfun(@(i, f) i + integrate(f, t, h), init, f(x))
 end
