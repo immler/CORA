@@ -360,7 +360,9 @@ methods
     res = horner(obj, vs, args)
     res = picard_approx(f, init, h, optns)
     res = grid_of_taylm( obj, projdims, max_grid )
+    res = shrink_wrap(obj)
     [reach, rs] = timeSeries(x, f, h, T, optns)
+    [ const, linear, nonlinear] = split_linear(obj)
     %display functions
     display(obj)
 end

@@ -1,6 +1,23 @@
 function tmtest()
-    tm = taylm(sym(@(x, y) [42 + x^2 + 3 * x * y + 4 * y + x*y^3; x + y - x^2]), interval([-1 -1], [1 1]));
-    grid_of_taylm(tm, 4)
+    tm = taylm(sym(@(x, y) [ x*y + 0.1*x + 1; x + 0.1* y- 2* x^2 + 2]), ...
+        interval([-1 -1], [1 1]));
+    tm(1).remainder = interval(0, 0.25);
+    tm(2).remainder = interval(0, 0.5);
+    
+    shrink_wrap(tm)
+    return
+    tms = {tm};
+    for t = 1:size(tms)
+        tm = tms{t};
+        grid = grid_of_taylm(tm, [1 2], 14);
+        [sg, ~] = size(grid);
+        figure;
+        hold on
+        for j = 1:sg
+            zono = zono_of_taylm(grid{j}, ['x', 'y']);
+            plotFilled(zono,[1 2], [1.0 0.5 1.0],'EdgeColor','black');
+        end
+    end
     return
     optns.picard_iterations = 30
     optns.widening_scale = 5
