@@ -48,13 +48,13 @@ function res = shrink_wrap(obj)
     rs = abs(R)*r
     
     % 6. ================
-    I = arrayfun(@(n) taylm(interval(-1,1), maxorder, n), names');
+    I = arrayfun(@(n) variable_like(n, obj(1)), names');
     g = R * p - I    
     dg = jacobian(getSyms(g)); % TODO: this can and should be done on the level of tms
-    dg = arrayfun(@(d) taylm(d, repmat(interval(-1, 1), 1, n)), dg)
+    dg = arrayfun(@(d) merge_in(taylm(d, repmat(interval(-1, 1), 1, n)), obj(1)), dg)
     % 7. ================
-    small_factor = 4.0;
-    q_max = 1.01;
+    small_factor = 1.01;
+    q_max = 1.4;
     q_tol = 1e-12;
     iter_max = 3;
     q = 1 + rs;
@@ -66,20 +66,23 @@ function res = shrink_wrap(obj)
         for i = 1:n
             for j = 1:n
                 % compute upper bound t of |dgi_dxj[-q, q]|
-                q_intervals = arrayfun(@(n, qn) taylm(interval(-qn, qn), maxorder, n), names, q');
+                q_intervals = arrayfun(@(n, qn) merge_in(taylm(interval(-qn, qn), 0, n), obj(1)), names, q');
                 insert = horner(dg(i, j), names, q_intervals);
                 insert.max_order = 0;
+                insert = insert
                 [insert, rem] = compress(insert);
-                t = supremum(abs(insert.remainder + rem));
+                t = supremum(abs(insert.remainder + rem))
                 s(i) = s(i) + t * (q(j) - 1);
             end
+            rsi = rs(i)
+            si = s(i)
             q(i) = 1 + rs(i) + s(i);
             if q(i) > q_max
                 error (['Shrink wrapping seems not promising (', num2str(q(i)), ' -> try other fallback strategies'])
             end
         end
         improve = any((q-q_old)./q > q_tol);
-        iter = iter + 1;
+        iter = iter + 1
     end
     % 8. ================
     s = small_factor * s;
@@ -89,24 +92,36 @@ function res = shrink_wrap(obj)
     if ~(abs(R) * r <= rs)
         error('scaling of r does not work')
     end
-    dgx = dg * I
-    qB = arrayfun(@(q, n) taylm(interval(-q, q), maxorder, n), q', names);
-    dgqB = horner(dgx, names, qB)
-    adgqB = repmat(interval(0,0), n, 1);
+    qB = arrayfun(@(q, n) merge_in(taylm(interval(-q, q), 0, n), obj(1)), q', names);
+    adgqB = repmat(interval(0,0), n, n);
     for i = 1:n
-        dgqB(i).max_order = 0;
-        [c, rem] = compress(dgqB(i));
-        adgqB(i) = abs(c.remainder + rem);
+        for j = 1:n
+            dgqBij = horner(dg(i, j), names, qB);
+            dgqBij.max_order = 0;
+            [c, rem] = compress(dgqBij);
+            adgqB(i, j) = abs(c.remainder + rem);
+        end
     end
-    b = supremum(adgqB * (q - ones(n, 1)))
-    s = s
+    b = supremum(adgqB * (q - ones(n, 1)));
+    s = s;
     if b <= s
-        res = horner(p, names, (q .* I)') + cst
+        cst = cst.set_remainders(repmat(interval(0, 0), n, 1));
+        res = horner(p, names, (q .* I)') + cst;
     else
+        b
+        s
         error(' last check did not work out as planned...')
     end
 %    c = center(obj)
 %    obj = obj - c
+end
+
+function res = merge_in(tm, obj)
+    res = mergeProperties(tm, obj, tm);
+end
+
+function v = variable_like(n, obj)
+    v = merge_in(taylm(interval(-1, 1), 0, n), obj);
 end
 
 function q = verify_shrink(n, rs, s, R)
