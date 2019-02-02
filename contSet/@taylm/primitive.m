@@ -15,6 +15,7 @@ function res = s_primitive( obj, d )
             if rci ~= 0
                 deg_t = res.monomials(i, t_index);
                 res.monomials(i, t_index) = deg_t + 1;
+                res.monomials(i, 1) = res.monomials(i, 1) + 1;
                 res.coefficients(i) = rci / (deg_t + 1);
             end
         end
