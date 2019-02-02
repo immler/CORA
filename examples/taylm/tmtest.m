@@ -1,21 +1,25 @@
 function tmtest()
-    tm = taylm(sym(@(x, y) [ x*y + 0.65*x + 1; x + 0.9*y - 2* x^2 + 2]), ...
+    tm = taylm(sym(@(x, y) [ 0.01 * x*y + x + 1; y - 0.01 * x^2 + 2]), ...
         interval([-1 -1], [1 1]));
-    tm(1).remainder = interval(0, 1e-6);
-    tm(2).remainder = interval(0, 1e-6);
+    tm(1).remainder = interval(0, 1e-4);
+    tm(2).remainder = interval(0, 1e-4);
     
-    shrink_wrap(tm)
-    return
-    tms = {tm};
+    stm = shrink_wrap(tm)
+    tms = {tm, stm};
     for t = 1:size(tms)
         tm = tms{t};
+        if t == 1
+            c = [1 0 1];
+        else
+            c = [0 1 0];
+        end
         grid = grid_of_taylm(tm, [1 2], 14);
         [sg, ~] = size(grid);
         figure;
         hold on
         for j = 1:sg
             zono = zono_of_taylm(grid{j}, ['x', 'y']);
-            plotFilled(zono,[1 2], [1.0 0.5 1.0],'EdgeColor','black');
+            plotFilled(zono,[1 2], c,'EdgeColor','black');
         end
     end
     return

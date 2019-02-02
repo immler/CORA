@@ -7,6 +7,7 @@ function res = shrink_wrap(obj)
     if m ~= 1
         error ('expected column vector tm')
     end
+    maxorder = obj(1).max_order;
     names = names_of(obj);
     [~, nnames] = size(names);
     if nnames > n
@@ -47,12 +48,12 @@ function res = shrink_wrap(obj)
     rs = abs(R)*r
     
     % 6. ================
-    I = arrayfun(@(n) taylm(interval(-1,1), obj(1).max_order, n), names');
+    I = arrayfun(@(n) taylm(interval(-1,1), maxorder, n), names');
     g = R * p - I    
     dg = jacobian(getSyms(g)); % TODO: this can and should be done on the level of tms
     dg = arrayfun(@(d) taylm(d, repmat(interval(-1, 1), 1, n)), dg)
     % 7. ================
-    small_factor = 1.00000001;
+    small_factor = 4.0;
     q_max = 1.01;
     q_tol = 1e-12;
     iter_max = 3;
@@ -65,7 +66,7 @@ function res = shrink_wrap(obj)
         for i = 1:n
             for j = 1:n
                 % compute upper bound t of |dgi_dxj[-q, q]|
-                q_intervals = arrayfun(@(n, qn) taylm(interval(-qn, qn), obj(i).max_order, n), names, q');
+                q_intervals = arrayfun(@(n, qn) taylm(interval(-qn, qn), maxorder, n), names, q');
                 insert = horner(dg(i, j), names, q_intervals);
                 insert.max_order = 0;
                 [insert, rem] = compress(insert);
@@ -82,19 +83,33 @@ function res = shrink_wrap(obj)
     end
     % 8. ================
     s = small_factor * s;
-    q = ones(n,1) + rs + s;
     
     % 9. ================
-    
+    q = ones(n,1) + rs + s
+    if ~(abs(R) * r <= rs)
+        error('scaling of r does not work')
+    end
+    dgx = dg * I
+    qB = arrayfun(@(q, n) taylm(interval(-q, q), maxorder, n), q', names);
+    dgqB = horner(dgx, names, qB)
+    adgqB = repmat(interval(0,0), n, 1);
+    for i = 1:n
+        dgqB(i).max_order = 0;
+        [c, rem] = compress(dgqB(i));
+        adgqB(i) = abs(c.remainder + rem);
+    end
+    b = supremum(adgqB * (q - ones(n, 1)))
+    s = s
+    if b <= s
+        res = horner(p, names, (q .* I)') + cst
+    else
+        error(' last check did not work out as planned...')
+    end
 %    c = center(obj)
 %    obj = obj - c
 end
 
-function res = verify_shrink(r, rt, s, R)
-    if ~(abs(R) * r <= rt)
-        disp('scaling of r does not work')
-        res = 0
-    end
+function q = verify_shrink(n, rs, s, R)
     
 end
 
