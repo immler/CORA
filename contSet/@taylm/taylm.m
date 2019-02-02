@@ -359,6 +359,7 @@ methods
     [quot rem] = divmod(obj1, obj2)
     res = horner(obj, vs, args)
     res = picard_approx(f, init, h, optns)
+    res = grid_of_taylm( obj, projdims, max_grid )
     [reach, rs] = timeSeries(x, f, h, T, optns)
     %display functions
     display(obj)

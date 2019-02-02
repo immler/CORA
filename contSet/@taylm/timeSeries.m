@@ -8,6 +8,7 @@ function [reach, rs] = timeSeries(x, f, h, T, optns)
         reach{i}{1} = x;
         reach{i}{2} = flowpipe;
         t = t + h
+        w = max(arrayfun(@(x) rad(x.remainder), x))
         i = i + 1;
     end
     rs = i - 1;
@@ -16,5 +17,5 @@ end
 function [flowpipe, final] = timeStep(x, f, h, optns)
     flowpipe = certify_step(f, x, h, optns);
     timestep = taylm(interval(1, 1), x(1).max_order);
-    final = horner(flowpipe, {'t'}, timestep);
+    final = horner(flowpipe, {'t'}, timestep );
 end

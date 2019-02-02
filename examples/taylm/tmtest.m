@@ -1,4 +1,7 @@
 function tmtest()
+    tm = taylm(sym(@(x, y) [42 + x^2 + 3 * x * y + 4 * y + x*y^3; x + y - x^2]), interval([-1 -1], [1 1]));
+    grid_of_taylm(tm, 4)
+    return
     optns.picard_iterations = 30
     optns.widening_scale = 5
     optns.narrowing_scale = 1.1

@@ -1,17 +1,17 @@
 function vdp_reach()
     % optns for Picard iteration
-    optns.picard_threshold = 1e-10;
-    optns.picard_order = 4;
+    optns.picard_threshold = 1e-6;
+    optns.picard_order = 6;
     optns.widening_scale = 1.1;
     optns.narrowing_scale = 1.01;
     optns.time_var = {'t'};
-    optns.remainder_estimation = [0.0001; 0.0001];
+    optns.remainder_estimation = [1e-10; 1e-10];
     
     % iniitalization of simulation and tdreach
     options.timeStep=0.1;
-    options.tFinal=0.2;
+    options.tFinal=1.5;
     
-    tm0 = taylm(interval([1.1; 2.25], [1.7; 2.35]),4, {'x'; 'y'}, 'int');
+    tm0 = taylm(interval([1.25; 2.25], [1.55; 2.35]),6, {'x'; 'y'}, 'int', 1e-3, 1e-12);
     zono0 = zono_of_taylm(tm0, ['x', 'y']);
     options.projectedDimensions=[1 2];
 
@@ -29,15 +29,14 @@ function vdp_reach()
     % compute reachable set
     [reach, rs] = timeSeries(tm0, vdpt, options.timeStep, options.tFinal, optns);
 
-
     % simulation
-    lorenz_sys = nonlinearSys(2,1,@vanderPolEq, options);
+    vdp_sys = nonlinearSys(2,1,@vanderPolEq, options);
     %--------------------------------------------------------------------------
     runs = 60;
     fractionVertices = 0.5;
     fractionInputVertices = 0.5;
     inputChanges = 6;
-    simRes = simulate_random(lorenz_sys, options, runs, fractionVertices, fractionInputVertices, inputChanges);
+    simRes = simulate_random(vdp_sys, options, runs, fractionVertices, fractionInputVertices, inputChanges);
     
     %plot results--------------------------------------------------------------
     plotOrder = 20;
@@ -57,6 +56,16 @@ function vdp_reach()
     for i=1:rs
         zono = zono_of_taylm(reach{i}{1}, ['t', 'x', 'y']);
         plotFilled(zono,options.projectedDimensions,[.8 .8 .8],'EdgeColor','black');
+    end
+    
+    %plot discrete as grid
+    for i=1:rs
+        grid = grid_of_taylm(reach{i}{1}, options.projectedDimensions, 4);
+        [sg, ~] = size(grid);
+        for j = 1:sg
+            zono = zono_of_taylm(grid{j}, ['t', 'x', 'y']);
+            plotFilled(zono,[1 2], [1.0 0.5 1.0],'EdgeColor','none');
+        end
     end
     
     %plot simulation results      

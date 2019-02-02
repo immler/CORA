@@ -10,7 +10,8 @@ function chen_reach() % actually, now it is the example by
     optns.remainder_estimation = [0.0001; 0.0001];
     
     % initalization of simulation and tdreach
-    options.tFinal=5;
+    options.timeStep=0.2;
+    options.tFinal=5.0;
 
     tm0 = taylm(interval([0.95; -1.05], [1.05; -0.95]),6, {'a'; 'b'}, 'int');
     zono0 = zono_of_taylm(tm0, ['a', 'b']);
@@ -23,7 +24,6 @@ function chen_reach() % actually, now it is the example by
     options.U = zonotope([0,0]);
     options.x0=center(zono0);
     options.R0=zono0;
-    options.timeStep=0.1;
     
     % function
     chen = @(x) [x(2); (x(1)^2)];
@@ -58,6 +58,17 @@ function chen_reach() % actually, now it is the example by
     for i=1:rs
         zono = zono_of_taylm(reach{i}{1}, ['a', 'b', 't']);
         plotFilled(zono,options.projectedDimensions,[.8 .8 .8],'EdgeColor','black');
+    end
+    
+    %plot discrete as grid
+    for i=1:rs
+        i
+        grid = grid_of_taylm(reach{i}{1}, options.projectedDimensions, 4);
+        [sg, ~] = size(grid);
+        for j = 1:sg
+            zono = zono_of_taylm(grid{j}, ['a', 'b', 't']);
+            plotFilled(zono,[1 2], [1.0 0.5 1.0],'EdgeColor','none');
+        end
     end
     
     %plot simulation results      
