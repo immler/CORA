@@ -53,10 +53,10 @@ function res = shrink_wrap(obj)
     dg = jacobian(getSyms(g)); % TODO: this can and should be done on the level of tms
     dg = arrayfun(@(d) merge_in(taylm(d, repmat(interval(-1, 1), 1, n)), obj(1)), dg)
     % 7. ================
-    small_factor = 1.01;
-    q_max = 1.4;
-    q_tol = 1e-12;
-    iter_max = 3;
+    small_factor = 1.001;
+    q_max = 1.01;
+    q_tol = 1e-8;
+    iter_max = 20;
     q = 1 + rs;
     improve = true;
     iter = 0;

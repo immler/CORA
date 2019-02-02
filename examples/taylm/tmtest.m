@@ -1,12 +1,10 @@
 function tmtest()
-    tm = taylm(sym(@(x, y) [ 0.1*x + 0.01*(x*y + 1); 0.1*y + 0.01*( - x^2 + 2)]), ...
+    tm = taylm(sym(@(x, y) [ x + 0.2*(x*y + 1); y + ( - x^2 + 2)]), ...
         interval([-1 -1], [1 1]), ...
         6, ...
-        'int', ...
-        1e-3,...%eps
-        1e-12); %tol
-    tm(1).remainder = interval(0, 1e-2);
-    tm(2).remainder = interval(0, 1e-2);
+        'int'); %tol
+    tm(1).remainder = interval(0, 1e-3);
+    tm(2).remainder = interval(0, 1e-3);
     
     stm = shrink_wrap(tm)
     tms = {stm, tm};
