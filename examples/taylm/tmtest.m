@@ -1,8 +1,8 @@
 function tmtest()
-    tm = taylm(sym(@(x, y) [ x*y + 0.1*x + 1; x + 0.1* y- 2* x^2 + 2]), ...
+    tm = taylm(sym(@(x, y) [ x*y + 0.65*x + 1; x + 0.9*y - 2* x^2 + 2]), ...
         interval([-1 -1], [1 1]));
-    tm(1).remainder = interval(0, 0.25);
-    tm(2).remainder = interval(0, 0.5);
+    tm(1).remainder = interval(0, 1e-6);
+    tm(2).remainder = interval(0, 1e-6);
     
     shrink_wrap(tm)
     return

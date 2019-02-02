@@ -49,7 +49,42 @@ function res = shrink_wrap(obj)
     % 6. ================
     I = arrayfun(@(n) taylm(interval(-1,1), obj(1).max_order, n), names');
     g = R * p - I    
-    dg = jacobian(getSyms(g)) % TODO: this can and should be 
+    dg = jacobian(getSyms(g)); % TODO: this can and should be done on the level of tms
+    dg = arrayfun(@(d) taylm(d, repmat(interval(-1, 1), 1, n)), dg)
+    % 7. ================
+    small_factor = 1.00000001;
+    q_max = 1.01;
+    q_tol = 1e-12;
+    iter_max = 3;
+    q = 1 + rs;
+    improve = true;
+    iter = 0;
+    while improve && iter < iter_max
+        s = zeros(size(rs));
+        q_old = q;
+        for i = 1:n
+            for j = 1:n
+                % compute upper bound t of |dgi_dxj[-q, q]|
+                q_intervals = arrayfun(@(n, qn) taylm(interval(-qn, qn), obj(i).max_order, n), names, q');
+                insert = horner(dg(i, j), names, q_intervals);
+                insert.max_order = 0;
+                [insert, rem] = compress(insert);
+                t = supremum(abs(insert.remainder + rem));
+                s(i) = s(i) + t * (q(j) - 1);
+            end
+            q(i) = 1 + rs(i) + s(i);
+            if q(i) > q_max
+                error (['Shrink wrapping seems not promising (', num2str(q(i)), ' -> try other fallback strategies'])
+            end
+        end
+        improve = any((q-q_old)./q > q_tol);
+        iter = iter + 1;
+    end
+    % 8. ================
+    s = small_factor * s;
+    q = ones(n,1) + rs + s;
+    
+    % 9. ================
     
 %    c = center(obj)
 %    obj = obj - c
