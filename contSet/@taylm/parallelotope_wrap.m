@@ -39,13 +39,13 @@ function res = parallelotope_wrap(obj, varargin)
     end
     
     if cond(A) > 1e5
-        error (['Condition number too high - consider implementing a' ...
+        error (['Condition number ', num2str(cond(A)), ' too high - consider implementing a' ...
             'nother fallback'])
     end
     
     % Optimiziation
     he = set_remainders(h, remainders(cst));
-    he = set(he, 'opt_method', 'bnb');
+    he = set(he, 'opt_method', 'int');
     prob = inv(A)*he;
     r = supremum(abs(interval(prob)));
 

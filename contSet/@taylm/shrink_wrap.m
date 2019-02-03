@@ -78,7 +78,8 @@ function res = shrink_wrap(obj, varargin)
     I = arrayfun(@(n) variable_like(n, obj(1)), names');
     g = R * p - I;
     dg = jacobian(getSyms(g)); % TODO: this can and should be done on the level of tms
-    dg = arrayfun(@(d) merge_in(taylm(d, repmat(interval(-1, 1), 1, n)), obj(1)), dg);
+    ONE = repmat(interval(-1, 1), 1, n);
+    dg = arrayfun(@(d) merge_in(taylm(d, ONE), obj(1)), dg);
     % 7. ================
     q = 1 + rs;
     improve = true;

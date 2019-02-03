@@ -1,20 +1,28 @@
-function vdp_reach()
+function laubloomis_reach()
     % optns for Picard iteration
-    optns.picard_threshold = 1e-6;
-    optns.picard_order = 10;
+    optns.picard_threshold = 1e-8;
+    optns.picard_order = 4;
     optns.widening_scale = 1.1;
     optns.narrowing_scale = 1.1;
     optns.time_var = {'t'};
-    optns.remainder_estimation = [1e-10; 1e-10];
+    optns.remainder_estimation = 5e-6 * ones(7,1);
     optns.parallelotope_factor = 1.1;
-
+    optns.shrinking_mod = 10;
+    optns.shrink_wrap_options = { 'small_factor' 1.01;
+        'iter_max' 5;
+        'q_max' 1.01;
+        'q_tol' 1e-12};
     % iniitalization of simulation and tdreach
     options.timeStep=0.1;
-    options.tFinal=7;
+    options.tFinal=1.5;
     
-    tm0 = taylm(interval([1.25; 2.25], [1.55; 2.35]),10, {'x'; 'y'}, 'int', 1e-3, 1e-12);
-    zono0 = zono_of_taylm(tm0, ['x', 'y']);
-    options.projectedDimensions=[1 2];
+    x0 = [1.2; 1.05; 1.5; 2.4; 1; 0.1; 0.45];
+    W = 0.01;
+    ivl0 = x0 + W*interval(-ones(7, 1), ones(7, 1));
+    names = {'x1'; 'x2'; 'x3'; 'x4'; 'x5'; 'x6'; 'x7'};
+    tm0 = taylm(ivl0, 4, names, 'int', 1e-3, 1e-12);
+    zono0 = zono_of_taylm(tm0, names');
+    options.projectedDimensions=[1 4];
 
     % fixed options for simulation
     options.tStart=0;
@@ -23,29 +31,26 @@ function vdp_reach()
     options.U = zonotope([0,0]);
     options.x0=center(zono0);
     options.R0=zono0;
-    
-    mu=1;
-    vdpt = @(x) [x(2); mu*(1-x(1)^2)*x(2)-x(1)];
-    
+
     % compute reachable set
-    [reach, rs] = timeSeries(tm0, vdpt, options.timeStep, options.tFinal, optns);
+    [reach, rs] = timeSeries(tm0, @ll, options.timeStep, options.tFinal, optns);
 
     % simulation
-    vdp_sys = nonlinearSys(2,1,@vanderPolEq, options);
+    llSys = nonlinearSys(7,1,@(t, x, u) ll(x), options);
     %--------------------------------------------------------------------------
     runs = 60;
     fractionVertices = 0.5;
     fractionInputVertices = 0.5;
     inputChanges = 6;
-    simRes = simulate_random(vdp_sys, options, runs, fractionVertices, fractionInputVertices, inputChanges);
-    
+    simRes = simulate_random(llSys, options, runs, fractionVertices, fractionInputVertices, inputChanges);
+
     %plot results--------------------------------------------------------------
     figure;
     hold on
-    
+
     for i=1:rs
         %plot flowpipes
-        zono = zono_of_taylm(reach{i}{2}, ['t', 'x', 'y']);
+        zono = zono_of_taylm(reach{i}{2}, [names', {'t'}]);
         plotFilled(zono,options.projectedDimensions,[.5 .5 .5],'EdgeColor','black');
     end
     
@@ -54,18 +59,8 @@ function vdp_reach()
 
     %plot discrete sets
     for i=1:rs
-        zono = zono_of_taylm(reach{i}{1}, ['t', 'x', 'y']);
+        zono = zono_of_taylm(reach{i}{1}, names');
         plotFilled(zono,options.projectedDimensions,[.8 .8 .8],'EdgeColor','black');
-    end
-    
-    %plot discrete as grid
-    for i=1:rs
-        grid = grid_of_taylm(reach{i}{1}, options.projectedDimensions, 4);
-        [sg, ~] = size(grid);
-        for j = 1:sg
-            zono = zono_of_taylm(grid{j}, ['t', 'x', 'y']);
-            plotFilled(zono,[1 2], [1.0 0.5 1.0],'EdgeColor','none');
-        end
     end
     
     %plot simulation results      
@@ -73,4 +68,14 @@ function vdp_reach()
         plot(simRes.x{i}(:,options.projectedDimensions(1)),simRes.x{i}(:,options.projectedDimensions(2)),'Color',0*[1 1 1]);
     end
 
+end
+
+function res = ll(x)
+    res = [1.4*x(3) - 0.9*x(1);
+        2.5*x(5)-1.5*x(2);
+        0.6*x(7) - 0.8*x(2)*x(3);
+        2 - 1.3*x(3)*x(4);
+        0.7*x(1) - x(4)*x(5);
+        0.3*x(1) - 3.1*x(6);
+        1.8*x(6) - 1.5*x(2)*x(7)];
 end

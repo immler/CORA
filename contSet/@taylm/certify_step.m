@@ -1,11 +1,14 @@
 function res = certify_step(f, init, h, optns)
+    tic
     picard = picard_approx(f, init, h, optns);
+    disp(['Picard approx:', num2str(toc), ' s'])
 
     % remainder estimation:
     rem = arrayfun(@(e) interval(-e, e), optns.remainder_estimation);
     %rem = [interval(-5.09307e-5, 7.86167e-5); interval(-1.75707e-4, 1.60933e-4)];
 
     % widening phase:
+    tic
     i = 0;
     fixed_point = 0;
     while ~fixed_point
@@ -26,8 +29,10 @@ function res = certify_step(f, init, h, optns)
             rem = optns.widening_scale * diffi;
         end
     end
-    
+    disp(['Widening:', num2str(toc), ' s'])
+
     % narrowing phase:
+    tic
     i = 0;
     do = 1;
     while do
@@ -47,5 +52,6 @@ function res = certify_step(f, init, h, optns)
             do = false;
         end
     end
+    disp(['Narrowing:', num2str(toc), ' s'])
     res = cand;    
 end
