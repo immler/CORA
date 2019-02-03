@@ -53,7 +53,7 @@ function int = interval(obj,varargin)
 
     % calculate the bounding interval
     if strcmp(option, 'int')
-        int = arrayfun(@(a) s_tayl2int(a), obj, 'UniformOutput', 0);
+        int = arrayfun(@(a) f_tayl2int(a), obj, 'UniformOutput', 0);
     elseif strcmp(option, 'bnb')
         int = arrayfun(@(a) optBnb(a), obj, 'UniformOutput', 0);
     elseif strcmp(option, 'bnbAdv')
@@ -70,6 +70,51 @@ end
 
 
 %% Auxiliary functions
+function int = f_tayl2int(obj)
+    % evaluate taylor factors
+    int = obj.remainder;
+    
+    for i = 1:length(obj.coefficients)
+        exp = obj.monomials(i,:);
+        temp = 1;       
+        for j = 1:length(exp)
+           temp = intMul(temp,intPower(exp(j)));
+           if temp == 3
+               break
+           end
+        end
+        c = obj.coefficients(i);
+        if c > 0
+            switch temp
+                case 1
+                    int = interval(infimum(int) + c, supremum(int) + c);
+%                    int.inf = int.inf + c;
+%                    int.sup = int.sup + c;
+                case 2
+                    int = interval(infimum(int), supremum(int) + c);
+%                    int.sup = int.sup + c;
+                case 3
+                    int = interval(infimum(int) - c, supremum(int) + c);
+%                    int.inf = int.inf - c;
+%                    int.sup = int.sup + c;
+            end
+        else
+            switch temp
+                case 1
+                    int = interval(infimum(int) + c, supremum(int) + c);
+%                    int.inf = int.inf + c;
+%                    int.sup = int.sup + c;
+                case 2
+                    int = interval(infimum(int) + c, supremum(int));
+%                    int.inf = int.inf + c;
+                case 3
+                    int = interval(infimum(int) + c, supremum(int) - c);
+%                    int.inf = int.inf + c;
+%                    int.sup = int.sup - c;
+            end
+        end 
+    end
+end
 
 function int = s_tayl2int(obj)
     % evaluate taylor factors
@@ -99,7 +144,6 @@ function int = intPower(exponent)
 end
 
 function int = intMul(factor1,factor2)
-
     if factor1 == 1
         int = factor2;
     elseif factor2 == 1
@@ -110,20 +154,18 @@ function int = intMul(factor1,factor2)
         int = 3;      % [-1,1] * [-1,1] = [-1,1]
     else
         int = 3;      % [-1,1] * [0,1] = [-1,1]
-    end
-    
+    end    
 end
 
 function int = evalInt(obj)
-        
-    if obj == 1
-        int = interval(1,1);
-    elseif obj == 2
-        int = interval(0,1);
-    else
-        int = interval(-1,1);
+    switch obj
+        case 1
+            int = interval(1,1);
+        case 2
+            int = interval(0,1);
+        otherwise
+            int = interval(-1,1);
     end
-
 end
 
 %------------ END OF CODE ------------ 
