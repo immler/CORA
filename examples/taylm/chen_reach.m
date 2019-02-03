@@ -5,13 +5,14 @@ function chen_reach() % actually, now it is the example by
     optns.picard_threshold = 1e-10;
     optns.picard_order = 6;
     optns.widening_scale = 1.1;
-    optns.narrowing_scale = 1.01;
+    optns.narrowing_scale = 1.1;
     optns.time_var = {'t'};
     optns.remainder_estimation = [0.0001; 0.0001];
-    
+    optns.parallelotope_factor = 1.1;
+
     % initalization of simulation and tdreach
-    options.timeStep=0.2;
-    options.tFinal=5.0;
+    options.timeStep=0.3;
+    options.tFinal=1.5;
 
     tm0 = taylm(interval([0.95; -1.05], [1.05; -0.95]),6, {'a'; 'b'}, 'int');
     zono0 = zono_of_taylm(tm0, ['a', 'b']);
@@ -63,7 +64,7 @@ function chen_reach() % actually, now it is the example by
     %plot discrete as grid
     for i=1:rs
         i
-        grid = grid_of_taylm(reach{i}{1}, options.projectedDimensions, 4);
+        grid = grid_of_taylm(reach{i}{1}, options.projectedDimensions, 5);
         [sg, ~] = size(grid);
         for j = 1:sg
             zono = zono_of_taylm(grid{j}, ['a', 'b', 't']);

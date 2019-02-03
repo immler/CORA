@@ -1,17 +1,18 @@
 function vdp_reach()
     % optns for Picard iteration
     optns.picard_threshold = 1e-6;
-    optns.picard_order = 6;
+    optns.picard_order = 10;
     optns.widening_scale = 1.1;
-    optns.narrowing_scale = 1.01;
+    optns.narrowing_scale = 1.1;
     optns.time_var = {'t'};
     optns.remainder_estimation = [1e-10; 1e-10];
-    
+    optns.parallelotope_factor = 1.1;
+
     % iniitalization of simulation and tdreach
     options.timeStep=0.1;
-    options.tFinal=1.5;
+    options.tFinal=7;
     
-    tm0 = taylm(interval([1.25; 2.25], [1.55; 2.35]),6, {'x'; 'y'}, 'int', 1e-3, 1e-12);
+    tm0 = taylm(interval([1.25; 2.25], [1.55; 2.35]),10, {'x'; 'y'}, 'int', 1e-3, 1e-12);
     zono0 = zono_of_taylm(tm0, ['x', 'y']);
     options.projectedDimensions=[1 2];
 

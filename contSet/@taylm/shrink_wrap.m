@@ -2,12 +2,41 @@
 % Reference: Shrink wrapping for Taylor models revisited, Florian Bünger
 %            (Numerical Algorithms (2018) 78:1001-1017)
 %            https://doi.org/10.1007/s11075-017-0410-1
-function res = shrink_wrap(obj)
+function res = shrink_wrap(obj, varargin)
+    small_factor = 1.001;
+    q_max = 1.01;
+    q_tol = 1e-8;
+    iter_max = 50;
+    if ~isempty(varargin)
+        [~, sv] = size(varargin);
+        if sv ~= 1
+            error('Too many arguments for shring_wrap - encode them in a cell matrix!')
+        end
+        optns = varargin{1};
+        [n, m] = size(optns);
+        if m ~= 2
+            error('Strange format for options of shrink_wrap')
+        end
+        for i=1:n
+            switch(optns{n, 1})
+                case 'small_factor'
+                    small_factor = optns{n, 2};
+                case 'q_max'
+                    q_max = optns{n, 2};
+                case 'q_tol'
+                    q_tol = optns{n, 2};
+                case 'iter_max'
+                    iter_max = optns{n, 2};
+                otherwise
+                    error('Ignored unknown option')
+            end
+        end
+    end
+    
     [n, m] = size(obj);
     if m ~= 1
         error ('expected column vector tm')
     end
-    maxorder = obj(1).max_order;
     names = names_of(obj);
     [~, nnames] = size(names);
     if nnames > n
@@ -15,12 +44,12 @@ function res = shrink_wrap(obj)
     end
     if nnames < n
         names = [names, ...
-            arrayfun(@(i) {['shrink_wrap_dummy', num2str(i)]}, 1:(n - nnames))]
+            arrayfun(@(i) {['shrink_wrap_dummy', num2str(i)]}, 1:(n - nnames))];
     end
     % 1. and 2. ================
-    [cst, lin, nln] = split_linear(obj)
+    [cst, ~, ~] = split_linear(obj);
     p = obj - cst;
-    p = set_remainders(p, repmat(interval(0,0), n, 1))
+    p = set_remainders(p, repmat(interval(0,0), n, 1));
     
     A = zeros(n, n);
     for i = 1:n
@@ -28,7 +57,6 @@ function res = shrink_wrap(obj)
             A(i, j) = coeff_of_names(obj(i), names(j), 1);
         end
     end
-    A = A
     
     % 3. ================
     if cond(A) > 1e5
@@ -37,26 +65,21 @@ function res = shrink_wrap(obj)
     end
     
     % 4. ================
-    R = inv(A)
+    R = inv(A);
     
     % 5. ================
-    r = zeros(n,1)
+    r = zeros(n,1);
     for i = 1:n
         r(i) = supremum(abs(cst(i).remainder));
     end
-    r = r
-    rs = abs(R)*r
+    rs = abs(R)*r;
     
     % 6. ================
     I = arrayfun(@(n) variable_like(n, obj(1)), names');
-    g = R * p - I    
+    g = R * p - I;
     dg = jacobian(getSyms(g)); % TODO: this can and should be done on the level of tms
-    dg = arrayfun(@(d) merge_in(taylm(d, repmat(interval(-1, 1), 1, n)), obj(1)), dg)
+    dg = arrayfun(@(d) merge_in(taylm(d, repmat(interval(-1, 1), 1, n)), obj(1)), dg);
     % 7. ================
-    small_factor = 1.001;
-    q_max = 1.01;
-    q_tol = 1e-8;
-    iter_max = 20;
     q = 1 + rs;
     improve = true;
     iter = 0;
@@ -69,26 +92,23 @@ function res = shrink_wrap(obj)
                 q_intervals = arrayfun(@(n, qn) merge_in(taylm(interval(-qn, qn), 0, n), obj(1)), names, q');
                 insert = horner(dg(i, j), names, q_intervals);
                 insert.max_order = 0;
-                insert = insert
                 [insert, rem] = compress(insert);
-                t = supremum(abs(insert.remainder + rem))
+                t = supremum(abs(insert.remainder + rem));
                 s(i) = s(i) + t * (q(j) - 1);
             end
-            rsi = rs(i)
-            si = s(i)
             q(i) = 1 + rs(i) + s(i);
             if q(i) > q_max
                 error (['Shrink wrapping seems not promising (', num2str(q(i)), ' -> try other fallback strategies'])
             end
         end
         improve = any((q-q_old)./q > q_tol);
-        iter = iter + 1
+        iter = iter + 1;
     end
     % 8. ================
     s = small_factor * s;
     
     % 9. ================
-    q = ones(n,1) + rs + s
+    q = ones(n,1) + rs + s;
     if ~(abs(R) * r <= rs)
         error('scaling of r does not work')
     end
@@ -103,37 +123,14 @@ function res = shrink_wrap(obj)
         end
     end
     b = supremum(adgqB * (q - ones(n, 1)));
-    s = s;
     if b <= s
         cst = cst.set_remainders(repmat(interval(0, 0), n, 1));
         res = horner(p, names, (q .* I)') + cst;
     else
-        b
-        s
+        disp(b)
+        disp(s)
         error(' last check did not work out as planned...')
     end
 %    c = center(obj)
 %    obj = obj - c
-end
-
-function res = merge_in(tm, obj)
-    res = mergeProperties(tm, obj, tm);
-end
-
-function v = variable_like(n, obj)
-    v = merge_in(taylm(interval(-1, 1), 0, n), obj);
-end
-
-function q = verify_shrink(n, rs, s, R)
-    
-end
-
-function names = names_of(obj)
-    [n, m] = size(obj);
-    names = {};
-    for i = 1:n
-        for j = 1:m
-            names = unique([names, obj(i, j).names_of_var]);
-        end
-    end
 end

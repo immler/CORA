@@ -1,21 +1,24 @@
 function tmtest()
-    tm = taylm(sym(@(x, y) [ x + 0.2*(x*y + 1); y + ( - x^2 + 2)]), ...
-        interval([-1 -1], [1 1]), ...
+    tm = taylm(sym(@(x, y) [ 0.4*x + 0.4*y + 0.2*(x*y + 1); 0.1*y - 0.2*x+0.4*(-x^2 + 2)]), ...
+        interval([-0.1 -0.1], [0.1 0.1]), ...
         6, ...
         'int'); %tol
-    tm(1).remainder = interval(0, 1e-3);
-    tm(2).remainder = interval(0, 1e-3);
+    tm(1).remainder = interval(0, 1e-4);
+    tm(2).remainder = interval(0, 1e-4);
     
-    stm = shrink_wrap(tm)
-    tms = {stm, tm};
+    wtm = parallelotope_wrap(tm);
+    stm = shrink_wrap(tm, {'small_factor', 5; 'q_max', 1.2});
+    tms = {wtm, stm, tm};
     figure;
     hold on
-    for t = 1:2
+    for t = 1:3
         tm = tms{t};
         if t == 1
             c = [1 0 1];
-        else
+        elseif t == 2
             c = [0 1 0];
+        else
+            c = [0 1 1];
         end
         grid = grid_of_taylm(tm, [1 2], 10);
         [sg, ~] = size(grid);
