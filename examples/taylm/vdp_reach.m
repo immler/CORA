@@ -1,11 +1,11 @@
 function vdp_reach()
     % optns for Picard iteration
-    optns.picard_threshold = 1e-6;
-    optns.picard_order = 10;
+    optns.picard_threshold = 1e-12;
+    optns.picard_order = 7;
     optns.widening_scale = 1.1;
-    optns.narrowing_scale = 1.1;
+    optns.narrowing_scale = 1.01;
     optns.time_var = {'t'};
-    optns.remainder_estimation = [1e-10; 1e-10];
+    optns.remainder_estimation = [1e-5; 1e-5];
     optns.parallelotope_factor = 1.0;
     optns.shrinking_mod=1;
     optns.zonotope_enclosure_mod=20;
@@ -20,7 +20,7 @@ function vdp_reach()
     options.timeStep=0.1;
     options.tFinal=0.1;
     
-    tm0 = taylm(interval([1.25; 2.25], [1.55; 2.35]),10, {'x'; 'y'}, 'int', 1e-3, 1e-12);
+    tm0 = taylm(interval([1.25; 2.25], [1.55; 2.35]),7, {'x'; 'y'}, 'int', 1e-12, 1e-8);
     zono0 = zono_of_taylm(tm0, ['x', 'y']);
     options.projectedDimensions=[1 2];
 
@@ -36,7 +36,7 @@ function vdp_reach()
     vdpt = @(x) [x(2); mu*(1-x(1)^2)*x(2)-x(1)];
     
     % experimenting with return times;;;
-    if 1
+    if 0
         x0 = [1.4; 2.3];
         h = 0.1;
         dR = approxReturnTimeDerivative(vdpt, x0, h/2);
@@ -127,57 +127,4 @@ function vdp_reach()
         plot(simRes.x{i}(:,options.projectedDimensions(1)),simRes.x{i}(:,options.projectedDimensions(2)),'Color',0*[1 1 1]);
     end
 
-end
-
-function res = approxReturnTimeDerivative(f, x0, h)
-    JacobianDelta = 1e-5;
-    JacobianTimeFactor = 5;
-    [~, m] = size(x0);
-    if m ~= 1
-        error('approx returntimederivative expecting column vector')
-    end
-    % make an approximate time step
-    [c, n] = normalHyperplaneAtStep(f, x0, h);
-    res = Jacobian(x0, JacobianDelta, @(x) returnTime(f, x, c, n, JacobianTimeFactor*5));
-end
-
-function F = templatePoly(x, xdata)
-    [n, m] = size(xdata);
-    for i = 1:n
-        F(i) = x(1) + ...
-            x(2).*xdata(i,1)   + x(3).*xdata(i,2) + ...
-            x(4).*xdata(i,1)^2 + x(5).*xdata(i,1).*xdata(i,2) + x(6).*xdata(i,2)^2;
-    end
-end
-
-
-function [c, n] = normalHyperplaneAtStep(f, x0, h)
-    [~, x] = ode45(@(t, x) f(x), [0, h], x0);
-    x1 = x(end,:)';
-    n = f(x1);
-    c = f(x1)' * x1;
-end
-
-function [position,isterminal,direction] = crossingEvent(c, n, x)
-    position = n' * x - c; % The value that we want to be zero
-    isterminal = 1;  % Halt integration 
-    direction = 0;
-end
-
-function res = Jacobian(x, h, F)
-    h = h*ones(size(x));
-    res = (F(repmat(x,size(x'))+diag(h))-F(repmat(x,size(x'))))./h';
-end
-
-function te = returnTime(f, x0, c, n, T)
-    [~, m] = size(x0);
-    te = zeros(1,m);
-    for i = 1:m
-        te(1,i) = s_returnTime(f, x0(:,i), c, n, T);
-    end
-end
-
-function te = s_returnTime(f, x0, c, n, T)
-    Opt = odeset('Events', @(~, x) crossingEvent(c, n, x));
-    [~, ~, te, ~, ~] = ode45(@(t, x) f(x), [0, T], x0, Opt);
 end
