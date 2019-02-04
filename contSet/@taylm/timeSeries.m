@@ -2,9 +2,9 @@ function [reach, rs] = timeSeries(x, f, h, T, optns)
     N = ceil(T / h);
     reach = cell(N, 2);
     t = 0.0;
-    i = 1;
+    i = 0;
     while t < T
-        [flowpipe, x] = timeStep(x, f, h, optns);
+        [flowpipe, x] = timeStep(x, f, h, optns, i);
         t = t + h
         w = max(arrayfun(@(x) rad(x.remainder), x))
         
@@ -22,6 +22,7 @@ function [reach, rs] = timeSeries(x, f, h, T, optns)
                 disp(M)
                 tic
                 wrap = parallelotope_wrap(x);
+                x
                 disp(['Parallelotope Wrap:', num2str(toc), ' s'])
                 if interval(wrap) <= optns.parallelotope_factor * interval(x)
                     x = wrap;
@@ -33,26 +34,26 @@ function [reach, rs] = timeSeries(x, f, h, T, optns)
                 end
             end
         end
+        i = i + 1;
         reach{i}{1} = x;
         reach{i}{2} = flowpipe;
-        i = i + 1;
     end
-    rs = i - 1;
+    rs = i;
 end
 
-function [flowpipe, final] = timeStep(x, f, h, optns)
-    flowpipe = certify_step(f, x, h, optns);
-    
-    switch optns.timedependency
-        case 0
-            timestep = taylm(interval(1, 1), x(1).max_order);    
-        case 1
-            c = arrayfun(@getCoef, center(x));
-            Dr = approxReturnTimeDerivative(f, c, h);
-            timestep = 1 + 2 * (x - c) * Dr / h;
+function res = approxReturnTimeDerivative(f, x0, h)
+    JacobianDelta = 1e-2;
+    JacobianTimeFactor = 5;
+    [~, m] = size(x0);
+    if m ~= 1
+        error('approx returntimederivative expecting column vector')
     end
-    
-    final = horner(flowpipe, {'t'}, timestep );
+    % make an approximate time step
+    [~, x] = ode45(@(t, x) f(x), [0, h], x0);
+    x1 = x(end,:)';
+    n = f(x1);
+    c = f(x1)' * x1;    
+    res = Jacobian(x0, JacobianDelta, @(x) returnTime(f, x, c, n, JacobianTimeFactor*5));
 end
 
 function [position,isterminal,direction] = crossingEvent(c, n, x)
@@ -79,17 +80,28 @@ function te = s_returnTime(f, x0, c, n, T)
     [~, ~, te, ~, ~] = ode45(@(t, x) f(x), [0, T], x0, Opt);
 end
 
-function res = approxReturnTimeDerivative(f, x0, h)
-    JacobianDelta = 1e-5;
-    JacobianTimeFactor = 5;
-    [~, m] = size(x0);
-    if m ~= 1
-        error('approx returntimederivative expecting column vector')
+function [flowpipe, final] = timeStep(x, f, h, optns, i)
+    flowpipe = certify_step(f, x, h, optns);
+    % TODO: ensure timestep is included in [0, h]
+    if optns.timedependency == 1 && mod(i, optns.dt_mod) == 0
+        c = arrayfun(@getCoef, center(x));
+        h2 = 0.5 * h;
+        Dr = approxReturnTimeDerivative(f, c, h2)
+%            timestep = 1 + 2 * (x - c) * Dr / h;
+% s on [-1; 1]
+% t on [0; h]
+% t = (s + 1)*h/2
+% s = 2*t/h - 1
+        xwr = set_remainders(x, repmat(interval(0,0), size(x)))
+        timestep = Dr * (xwr - c) / h % checked, this is perfectly right!
+        itstp = interval(timestep)
+        if interval(timestep) <= interval(-1, 1)
+        else
+            error ('The time is too wrong')
+        end
+    else
+        timestep = taylm(interval(1, 1), x(1).max_order);
     end
-    % make an approximate time step
-    [~, x] = ode45(@(t, x) f(x), [0, h], x0);
-    x1 = x(end,:)';
-    n = f(x1);
-    c = f(x1)' * x1;    
-    res = Jacobian(x0, JacobianDelta, @(x) returnTime(f, x, c, n, JacobianTimeFactor*5));
+    
+    final = horner(flowpipe, {'t'}, timestep );
 end

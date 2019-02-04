@@ -367,6 +367,7 @@ methods
     res = order_1(obj)
     [reach, rs] = timeSeries(x, f, h, T, optns)
     [ const, linear, nonlinear] = split_linear(obj)
+    res = approxReturnTimeDerivative(f, x0, h)
     %display functions
     display(obj)
 end
