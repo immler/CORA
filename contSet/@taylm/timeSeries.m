@@ -7,6 +7,11 @@ function [reach, rs] = timeSeries(x, f, h, T, optns)
         [flowpipe, x] = timeStep(x, f, h, optns);
         t = t + h
         w = max(arrayfun(@(x) rad(x.remainder), x))
+        
+        if mod(i, optns.zonotope_enclosure_mod) == 0
+            x = order_1(x);
+        end
+
         if mod(i, optns.shrinking_mod) == 0
             try
                 tic
@@ -38,16 +43,17 @@ end
 function [flowpipe, final] = timeStep(x, f, h, optns)
     flowpipe = certify_step(f, x, h, optns);
     
-    timestep = taylm(interval(1, 1), x(1).max_order);
+    switch optns.timedependency
+        case 0
+            timestep = taylm(interval(1, 1), x(1).max_order);    
+        case 1
+            c = arrayfun(@getCoef, center(x));
+            Dr = approxReturnTimeDerivative(f, c, h);
+            timestep = 1 + 2 * (x - c) * Dr / h;
+    end
     
     final = horner(flowpipe, {'t'}, timestep );
-    
-    c = center(final)
-    r = 
-    fc = f(c)
-    
 end
-
 
 function [position,isterminal,direction] = crossingEvent(c, n, x)
     position = n' * x - c; % The value that we want to be zero

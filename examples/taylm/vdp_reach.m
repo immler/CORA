@@ -8,16 +8,18 @@ function vdp_reach()
     optns.remainder_estimation = [1e-10; 1e-10];
     optns.parallelotope_factor = 1.1;
     optns.shrinking_mod=1;
+    optns.zonotope_enclosure_mod=inf;
     optns.shrink_wrap_options = { 'small_factor' 1.01;
         'iter_max' 5;
         'q_max' 1.01;
         'q_tol' 1e-12};
-
+    optns.timedependency = 1;
+    
     % iniitalization of simulation and tdreach
     options.timeStep=0.1;
-    options.tFinal=0.1;
+    options.tFinal=7;
     
-    tm0 = taylm(interval([1.25; 2.25], [1.55; 2.35]),10, {'x'; 'y'}, 'int', 1e-3, 1e-12);
+    tm0 = taylm(interval([1.25; 2.25], [1.55; 2.35]),10, {'x'; 'y'}, 'int', 1e-3, 1e-8);
     zono0 = zono_of_taylm(tm0, ['x', 'y']);
     options.projectedDimensions=[1 2];
 
@@ -32,10 +34,6 @@ function vdp_reach()
     mu=1;
     vdpt = @(x) [x(2); mu*(1-x(1)^2)*x(2)-x(1)];
 
-    % experimenting with return time...
-    x0 = [1.4; 2.3]
-    res = approxReturnTimeDerivative(vdpt, x0, 0.1)
-return
     % compute reachable set
     [reach, rs] = timeSeries(tm0, vdpt, options.timeStep, options.tFinal, optns);
 

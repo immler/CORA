@@ -39,8 +39,9 @@ function res = parallelotope_wrap(obj, varargin)
     end
     
     if cond(A) > 1e5
-        error (['Condition number ', num2str(cond(A)), ' too high - consider implementing a' ...
+        disp (['Condition number ', num2str(cond(A)), ' too high - consider implementing a' ...
             'nother fallback'])
+        res = obj
     end
     
     % Optimiziation

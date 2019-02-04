@@ -1,5 +1,5 @@
 function res = zono_of_taylm( obj, names )
-    obj = order_1_taylm(obj);
+    obj = order_1(obj);
     [so, ~] = size(obj);
     [~, sn] = size(names);
     zono = zeros(so, sn + 1 + so(1));
@@ -20,15 +20,3 @@ function res = zono_of_taylm( obj, names )
     zono = zono;
     res = zonotope(zono);
 end
-
-function res = order_1_taylm(obj)
-    res = arrayfun(@s_order_1_taylm, obj);
-end
-
-function res = s_order_1_taylm( obj )
-    objz = obj;
-    objz.max_order = 1;
-    [res, rem] = compress(objz);
-    res.remainder = res.remainder + rem;
-end
-
