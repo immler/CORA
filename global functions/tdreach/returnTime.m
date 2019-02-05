@@ -4,7 +4,7 @@ function te = returnTime(f, x0, c, n, T)
     for i = 1:m
         r = s_returnTime(f, x0(:,i), c, n, T);
         if isempty(r)
-            te = []
+            te = [];
         else
             te(1,i) = r;
         end

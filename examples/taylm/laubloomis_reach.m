@@ -20,7 +20,7 @@ function laubloomis_reach()
     W = 0.01;
     ivl0 = x0 + W*interval(-ones(7, 1), ones(7, 1));
     
-    [ts, xs, ws] = simulateTimeDepReach(ivl0, 1, @ll, 0.5, @templateLinear, 10.0, 1);
+    [ts, xs, ws] = simulateTimeDepReach(ivl0, 1, @ll, 0.5, 20.0, 0);
     for i = 1:7
         for j=i+1:6
             figure('Name', ['Figure ', num2str(i), ', ', num2str(j)]);

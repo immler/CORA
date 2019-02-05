@@ -1,4 +1,4 @@
-function [ts, xs, ws] = simulateTimeDepReach(ivl, sample_gridN, f, h0, T, dodep)
+function [ts, xs, ws] = simulateTimeDepReach(ivl, sample_gridN, f, h0, template, T, dodep)
     samples = sample_points(taylm(ivl), sample_gridN);
     [D,Nsamples] = size(samples);
     ts = zeros(Nsamples,1);
@@ -9,19 +9,19 @@ function [ts, xs, ws] = simulateTimeDepReach(ivl, sample_gridN, f, h0, T, dodep)
         i = i + 1;
         disp(['step no ', num2str(i), ', t = ', num2str(t)])
         if dodep
-            F_fitted = dependentTime(f, samples, h0);
+            F_fitted = dependentTime(f, samples, h0, template);
         end
         hmin = inf;
         for s = 1:Nsamples
             sample = samples(:,s);
             simulations(:,s,i) = sample;
             if dodep
-                h = templateLinear(F_fitted, sample');
+                h = template(F_fitted, sample');
             else
                 h = h0/4;
             end
             hmin = min(h, hmin);
-            [~, x, ~] = ode45(@(t, x) f(x), [0, h], sample);
+            [~, x, ~] = ode45(@(t, x) f(x), [0, hmin], sample);
             samples(:,s) = x(end,:);
         end
         t = t + hmin;
@@ -35,7 +35,7 @@ function [ts, xs, ws] = simulateTimeDepReach(ivl, sample_gridN, f, h0, T, dodep)
             upper(d) = max(samples(d,:));
             wd(d) = max(samples(d,:)) - min(samples(d,:));
         end
-        ws(i) = max(wd);
+        ws(i) = sum(wd);
     end
     for i = 1:D
         xs{i} = simulations(i,:);
