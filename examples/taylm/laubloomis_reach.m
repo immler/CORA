@@ -19,6 +19,17 @@ function laubloomis_reach()
     x0 = [1.2; 1.05; 1.5; 2.4; 1; 0.1; 0.45];
     W = 0.01;
     ivl0 = x0 + W*interval(-ones(7, 1), ones(7, 1));
+    
+    [ts, xs, ws] = simulateTimeDepReach(ivl0, 1, @ll, 0.5, @templateLinear, 10.0, 1);
+    for i = 1:7
+        for j=i+1:6
+            figure('Name', ['Figure ', num2str(i), ', ', num2str(j)]);
+            plot(xs{i}, xs{j}, 'x')
+        end
+    end
+    figure('Name', 'widths');
+    plot(ts, ws)
+    return
     names = {'x1'; 'x2'; 'x3'; 'x4'; 'x5'; 'x6'; 'x7'};
     tm0 = taylm(ivl0, 4, names, 'int', 1e-3, 1e-12);
     zono0 = zono_of_taylm(tm0, names');

@@ -1,5 +1,5 @@
 function res = dependentTime(f, samples, h, template)
-    timeshorteningFactor = 0.8;
+    timeshorteningFactor = 0.5;
     % find closest point
     [n, N] = size(samples); % N sample points of dimension n
     dists = zeros(N, 1);
@@ -22,5 +22,5 @@ function res = dependentTime(f, samples, h, template)
         response(i) = r;
     end
     Dr = approxReturnTimeDerivative(f, x0, h2);
-    res = nlinfit(explanatory,response,template,[0, Dr, 0, 0, 0]);
+    res = nlinfit(explanatory,response,@templateLinear,[0, Dr]);
 end
