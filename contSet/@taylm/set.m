@@ -52,7 +52,7 @@ function obj = s_set(obj,property,value)
         end
     elseif strcmp(property,'eps')
         obj.eps = value;
-    elseif strcmp(property,'tolerane')
+    elseif strcmp(property,'tolerance')
         obj.tolerance = value;
     else
         error('Wrong value for input argument "property"!'); 

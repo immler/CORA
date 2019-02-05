@@ -22,8 +22,10 @@ function [reach, rs] = timeSeries(x, f, h, T, optns)
                 disp(M)
                 tic
                 wrap = parallelotope_wrap(x);
-                x;
                 disp(['Parallelotope Wrap:', num2str(toc), ' s'])
+                disp(['Parallelotope Wrap factors:'])
+                interval(wrap)
+                interval(x)
                 if interval(wrap) <= optns.parallelotope_factor * interval(x)
                     x = wrap;
                 elseif min(rad(interval(x))) >= 1
@@ -45,35 +47,8 @@ function [flowpipe, final] = timeStep(x, f, h, optns, i)
     flowpipe = certify_step(f, x, h, optns);
     % TODO: ensure timestep is included in [0, h]
     if optns.timedependency == 1 && mod(i, optns.dt_mod) == 0
-        x0 = arrayfun(@getCoef, center(x));
-        h2 = 0.5 * h;
-        Dr = approxReturnTimeDerivative(f, x0, h2);
-        [c, nrml] = normalHyperplaneAtStep(f, x0, h2);
-
-        % samples
-        names = names_of(x);
-        [~, nnames] = size(names);
-        ranges = repmat({-1:0.1:1}, size(names));
-        outputs = cell(size(ranges));
-        [outputs{:}] = ndgrid(ranges{:});
-        [n, m] = size(outputs{1, 1});
-        ps = zeros(n * m, nnames);
-        for i = 1:n
-            for j = 1:m
-                for v = 1:nnames
-                    pv = outputs{1, v};
-                    ps((i - 1) * m + j, v) = pv(i, j);
-                end
-            end
-        end
-        explanatory = ps;
-        response=zeros(n*m, 1);
-        for i = 1:n*m
-            sample = arrayfun(@(v) explanatory(i, v), (1:nnames));
-            samplepoint = point_eval(x, names, sample);
-            response(i, 1) = returnTime(f, samplepoint, c, nrml, h);
-        end
-        F_fitted = nlinfit(explanatory,response,@templatePoly,[0, Dr, 0, 0, 0])
+        samples = sample_points(x, 10);
+        F_fitted = dependentTime(f, samples, h, @templatePoly)
         arg(1, 1) = x(1,1);
         arg(1, 2) = x(2,1);
         arg(1, 1).remainder = interval(0, 0);
@@ -86,10 +61,13 @@ function [flowpipe, final] = timeStep(x, f, h, optns, i)
 % s = 2*t/h - 1
 % xwr = set_remainders(x, repmat(interval(0,0), size(x)))
 %       timestep = Dr * (xwr - c) / h % checked, this is perfectly right!
-        itstp = interval(timestep);
-        if interval(timestep) <= interval(-1, 1)
+        itstp = timestep;
+        itstp.set('opt_method', 'bnb')
+        itstp = interval(itstp)
+        if itstp <= interval(-1, 1)
         else
-            error ('The time is too wrong')
+            disp ('The time is too wrong')
+            timestep = taylm(interval(1, 1), x(1).max_order);
         end
     else
         timestep = taylm(interval(1, 1), x(1).max_order);

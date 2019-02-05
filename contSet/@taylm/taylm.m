@@ -365,6 +365,7 @@ methods
     res = parallelotope_wrap(obj, varargin)
     res = names_of(obj)
     res = order_1(obj)
+    res = sample_points(obj, N)
     [reach, rs] = timeSeries(x, f, h, T, optns)
     [ const, linear, nonlinear] = split_linear(obj)
     res = point_eval( obj, vars, values )

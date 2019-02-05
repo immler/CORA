@@ -1,7 +1,7 @@
 function vdp_reach()
     % optns for Picard iteration
-    optns.picard_threshold = 1e-12;
-    optns.picard_order = 7;
+    optns.picard_threshold = 1e-5;
+    optns.picard_order = 5;
     optns.widening_scale = 1.1;
     optns.narrowing_scale = 1.01;
     optns.time_var = {'t'};
@@ -20,7 +20,7 @@ function vdp_reach()
     options.timeStep=0.1;
     options.tFinal=0.1;
     
-    tm0 = taylm(interval([1.25; 2.25], [1.55; 2.35]),7, {'x'; 'y'}, 'int', 1e-12, 1e-8);
+    tm0 = taylm(interval([1.25; 2.25], [1.55; 2.35]),5, {'x'; 'y'}, 'int', 1e-12, 1e-8);
     zono0 = zono_of_taylm(tm0, ['x', 'y']);
     options.projectedDimensions=[1 2];
 
@@ -35,49 +35,50 @@ function vdp_reach()
     mu=1;
     vdpt = @(x) [x(2); mu*(1-x(1)^2)*x(2)-x(1)];
     
+    [xs, ys] = simulateTimeDepReach(interval([1.25; 2.25], [1.55; 2.35]), 10, vdpt, 0.1, @templateLinear, 4);
+    figure;
+    plot(xs, ys, '.')
+    return
     % experimenting with return times;;;
-    if 0
+    if 1
         x0 = [1.4; 2.3];
         h = 0.1;
         dR = approxReturnTimeDerivative(vdpt, x0, h/2);
-        xs = 1.25:0.01:1.55;
+        xs = 1.25:0.05:1.55;
         ys = 2.25:0.01:2.35;
         [X, Y] = meshgrid(xs, ys);
         [n, m] = size(X);
         xp = zeros(n,m);
         yp = zeros(n,m);
-        for i=1:n
-            for j=1:m
-                p = [X(i, j); Y(i, j)];
-                t = 0.05 + dR * (p - x0);
-                [~, x, ~] = ode45(@(t, x) vdpt(x), [0, t], p);
-                xp(i, j) = x(end,1);
-                yp(i, j) = x(end,2);
+        f = vdpt;
+        samples = [X(:), Y(:)]';
+        [~,Nsamples] = size(samples);
+        Nsteps = 70;
+        simulations = zeros(2, Nsamples, Nsteps);
+        for i = 1:Nsteps
+            F_fitted = dependentTime(f, samples, h, @templateLinear);
+            for s = 1:Nsamples
+                sample = samples(:,s);
+                simulations(:,s,i) = sample;
+                t = templatePoly(F_fitted, sample');
+                [~, x, ~] = ode45(@(t, x) vdpt(x), [0, t], sample);
+                samples(:,s) = x(end,:);
             end
         end
-        
-        [c, n] = normalHyperplaneAtStep(vdpt, x0, h/2);
-        explanatory = [X(:), Y(:)];
-        [ne, ~] = size(explanatory);
-        response = arrayfun(@(i) returnTime(vdpt, explanatory(i,:)', c, n, 5 * h), 1:ne);
-        F_fitted = nlinfit(explanatory,response,@templatePoly,[0, dR, 0, 0, 0]);
-
-        for i=1:n
-            for j=1:m
-                p = [X(i, j); Y(i, j)];
-                t = templatePoly(F_fitted, p');
-                [~, x, ~] = ode45(@(t, x) vdpt(x), [0, t], p);
-                xf(i, j) = x(end,1);
-                yf(i, j) = x(end,2);
-            end
-        end
-        figure
-        hold on;
-        plot(xf, yf, 'o')
         % x: coefficients of polynomial encoding time dependency
         % xdata: input values
         % ydata: Poincare map onto the thing
-        
+        xs = zeros(Nsteps*Nsamples,1);
+        ys = zeros(Nsteps*Nsamples,1);
+        for n=1:Nsteps
+            for s=1:Nsamples
+                for i=1:2
+                    
+                end
+            end
+        end
+        figure
+        plot(simulations(1,:), simulations(2,:), 'o')
         return%:)
     end
 
@@ -124,7 +125,11 @@ function vdp_reach()
     
     %plot simulation results      
     for i=1:length(simRes.t)
-        plot(simRes.x{i}(:,options.projectedDimensions(1)),simRes.x{i}(:,options.projectedDimensions(2)),'Color',0*[1 1 1]);
+%        plot(simRes.x{i}(:,options.projectedDimensions(1)),simRes.x{i}(:,options.projectedDimensions(2)),'Color',0*[1 1 1]);
     end
 
+    % plot originial fitting
+    plot(xf, yf, 'o')
+
 end
+

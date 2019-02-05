@@ -2,7 +2,12 @@ function te = returnTime(f, x0, c, n, T)
     [~, m] = size(x0);
     te = zeros(1,m);
     for i = 1:m
-        te(1,i) = s_returnTime(f, x0(:,i), c, n, T);
+        r = s_returnTime(f, x0(:,i), c, n, T);
+        if isempty(r)
+            te = []
+        else
+            te(1,i) = r;
+        end
     end
 end
 
