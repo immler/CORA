@@ -11,7 +11,6 @@ function [ts, xs, ws] = simulateTimeDepReach(ivl, sample_gridN, f, h0, T, dodep)
         if dodep
             timedep = dependentTime(f, samples, h0);
         end
-        timedeps = timedep' * [ones(1, Nsamples); samples];
         hmin = inf;
         for s = 1:Nsamples
             sample = samples(:,s);
@@ -19,7 +18,7 @@ function [ts, xs, ws] = simulateTimeDepReach(ivl, sample_gridN, f, h0, T, dodep)
             if dodep
                 h = timedep' * [1; sample];
             else
-                h = h0/4;
+                h = h0;
             end
             hmin = min(h, hmin);
             [~, x, ~] = ode45(@(t, x) f(x), [0, h], sample);
