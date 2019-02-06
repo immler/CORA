@@ -9,14 +9,14 @@ function [ts, xs, ws] = simulateTimeDepReach(ivl, sample_gridN, f, h0, T, dodep)
         i = i + 1;
         disp(['step no ', num2str(i), ', t = ', num2str(t)])
         if dodep
-            F_fitted = dependentTime(f, samples, h0);
+            [x0, timedep] = dependentTime(f, samples, h0);
         end
         hmin = inf;
         for s = 1:Nsamples
             sample = samples(:,s);
             simulations(:,s,i) = sample;
             if dodep
-                h = templateLinear(F_fitted, sample');
+                h = timedep' * [1; (sample - x0)];
             else
                 h = h0/4;
             end
