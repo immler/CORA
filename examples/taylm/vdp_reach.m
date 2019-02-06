@@ -35,9 +35,11 @@ function vdp_reach()
     mu=1;
     vdpt = @(x) [x(2); mu*(1-x(1)^2)*x(2)-x(1)];
     
-    [~, xs, ~] = simulateTimeDepReach(interval([1.25; 2.25], [1.55; 2.35]), 10, vdpt, 0.1, 6.5, 1);
+    [ts, xs, ws] = simulateTimeDepReach(interval([1.25; 2.25], [1.75; 2.35]), 10, vdpt, 0.1, 4.0, 1);
     figure;
     plot(xs{1}, xs{2}, '.')
+    figure;
+    plot(ts, ws, '.')
     return
     % experimenting with return times;;;
     if 1

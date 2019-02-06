@@ -4,35 +4,52 @@ function res = dependentTime(f, samples, h)
     
     f0xs = zeros(n, N);
     f1xs = zeros(n, N);
+    n0xs = zeros(n, N);
+    n1xs = zeros(n, N);
     x1s = zeros(n, N);
     for i = 1:N
         x0 = samples(:,i);
-        f0xs(:,i) = f(x0);
+        fx0 = f(x0);
+        f0xs(:,i) = fx0;
+        n0xs(:,i) = fx0 / norm(fx0);
         [~, x] = ode45(@(t, x) f(x), [0, h], x0);
         x1 = x(end,:)';
         x1s(:,i) = x1;
-        f1xs(:,i) = f(x1);
+        fx1 = f(x1);
+        f1xs(:,i) = fx1;
+        n1xs(:,i) = fx1 / norm(fx1);
     end
-    nrml = mean(f0xs, 2);
-    x0 = mean(samples(:,i),2);
-    nrml = f(x0);
-    c0s = zeros(1, N);
-    c1s = zeros(1, N);
+    lower0 = zeros(N,1);
+    upper0 = zeros(N,1);
+    lower1 = zeros(N,1);
+    upper1 = zeros(N,1);
     for i = 1:N
-        c0s(i) = nrml' * samples(:,i);
-        c1s(i) = nrml' * x1s(:,i);
+        lower0(i) = max(samples' * n0xs(:,i));
+        upper0(i) = min(x1s' * n0xs(:,i));
+        lower1(i) = max(samples' * n1xs(:,i));
+        upper1(i) = min(x1s' * n1xs(:,i));
     end
-    c = max(max(c0s(:)), min(c1s(:)));
-
-    % find an optimal separating hyperplane (not a good idea)
-    % (http://www.robots.ox.ac.uk/~az/lectures/ml/matlab2.pdf)
-%    H = eye(n+1);
-%    H(n+1,n+1) = 0;
-%    A = -[eye(N), zeros(N); zeros(N), -eye(N)] * [[samples'; x1s'], ones(2*N,1)];
-%    b = -ones(2*N,1);
-%    opt = quadprog(H, zeros(n+1,1), A, b);
-%    c = -opt(n + 1) - 1;
-%   nrml = opt(1:n);
+    [sep0, isep0] = max(upper0 - lower0);
+    [sep1, isep1] = max(upper1 - lower1);
+    sep = max(sep0, sep1);
+    if max(sep0, sep1) <= 0
+        disp('no separation for directions of flow -> trying to find a separating hyperplane!')
+        % find an optimal separating hyperplane (not a good idea)
+        % (http://www.robots.ox.ac.uk/~az/lectures/ml/matlab2.pdf)
+        H = eye(n+1);
+        H(n+1,n+1) = 0;
+        A = -[eye(N), zeros(N); zeros(N), -eye(N)] * [[samples'; x1s'], ones(2*N,1)];
+        b = -ones(2*N,1);
+        opt = quadprog(H, zeros(n+1,1), A, b);
+        c = -opt(n + 1) - 1;
+        nrml = opt(1:n);
+    elseif sep0 >= sep1
+        nrml = n0xs(:,isep0);
+        c = upper0(isep0);
+    else
+        nrml = n1xs(:,isep1);
+        c = upper1(isep1);
+    end
     
 %   dists = zeros(N, 1);
 %    for i = 1:N
